@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Publication and Collaborator Network</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <style>
+      :root {
+        --ink: #1a1a18;
+        --line: #d9d4c8;
+        --coauthor: #d6d2d2;
+        --preprint: #79addc;
+        --journal: #9e1910;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: transparent;
+        color: var(--ink);
+        font-family: Georgia, "Times New Roman", serif;
+      }
+
+      .network-panel {
+        height: 260px;
+        background: transparent;
+        overflow: hidden;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .link {
+        stroke: #666;
+        stroke-width: 1;
+        opacity: 1;
+      }
+
+      .node {
+        cursor: pointer;
+      }
+
+      .node circle {
+        stroke: #fff;
+        stroke-width: 1.5px;
+      }
+
+      .node text {
+        pointer-events: none;
+        fill: var(--ink);
+        font-size: 12px;
+        opacity: 0;
+      }
+
+      .node:focus-visible circle {
+        stroke: var(--ink);
+        stroke-width: 2.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="network-panel">
+      <svg id="publication-network" viewBox="0 0 700 260" role="img" aria-label="Collaboration Network Linking Dogan Akpinar, Coauthors, Preprints, and Journal Articles"></svg>
+    </div>
+
+    <script>
+      const nodes = [
+        { id: "dogan", name: "Dogan Akpinar", group: "self", url: "https://inspirehep.net/authors/2810985?ui-citation-summary=true" },
+        { id: "aoki", name: "Katsuki Aoki", group: "coauthor", url: "https://inspirehep.net/authors/1509826?ui-citation-summary=true" },
+        { id: "cristofoli", name: "Andrea Cristofoli", group: "coauthor", url: "https://inspirehep.net/authors/1726207?ui-citation-summary=true" },
+        { id: "jeong", name: "Hyun Jeong", group: "coauthor", url: "https://inspirehep.net/authors/3098328?ui-citation-summary=true" },
+        { id: "yoshimura", name: "Kaho Yoshimura", group: "coauthor", url: "https://inspirehep.net/authors/2955078?ui-citation-summary=true" },
+        { id: "brown", name: "Graham R. Brown", group: "coauthor", url: "https://inspirehep.net/authors/1865281?ui-citation-summary=true" },
+        { id: "gonzo", name: "Riccardo Gonzo", group: "coauthor", url: "https://inspirehep.net/authors/1812058?ui-citation-summary=true" },
+        { id: "zeng", name: "Mao Zeng", group: "coauthor", url: "https://inspirehep.net/authors/1310565?ui-citation-summary=true" },
+        { id: "delduca", name: "Vittorio del Duca", group: "coauthor", url: "https://inspirehep.net/authors/1011316?ui-citation-summary=true" },
+        { id: "cordero", name: "Fernando Febres Cordero", group: "coauthor", url: "https://inspirehep.net/authors/1037288?ui-citation-summary=true" },
+        { id: "kraus", name: "Manfred Kraus", group: "coauthor", url: "https://inspirehep.net/authors/1376436?ui-citation-summary=true" },
+        { id: "smirnov", name: "Alexander Smirnov", group: "coauthor", url: "https://inspirehep.net/authors/1024152?ui-citation-summary=true" },
+        { id: "ruf", name: "Michael S. Ruf", group: "coauthor", url: "https://inspirehep.net/authors/1684312?ui-citation-summary=true" },
+        { id: "thermo", name: "Black Hole Thermodynamics Meets On-Shell Amplitudes: Local Detailed Balance and Thermal Spectrum from Spin Universality and Unitarity", group: "preprint", url: "https://arxiv.org/abs/2606.13599" },
+        { id: "gravitons", name: "Scattering Gravitons off General Spinning Compact Objects to O(G^2 S^4)", group: "journal", url: "https://doi.org/10.1103/1zs7-kj4f" },
+        { id: "symmetries", name: "Unexpected Symmetries of Kerr Black Hole Scattering", group: "journal", url: "https://doi.org/10.1103/dd5t-8dn5" },
+        { id: "self-force", name: "Spinning Self-Force EFT: 1SF Waveform Recursion Relation and Compton Scattering", group: "journal", url: "https://doi.org/10.1103/fs74-84v6" },
+        { id: "quartic", name: "First Look at Quartic-in-Spin Binary Dynamics at Third Post-Minkowskian Order", group: "journal", url: "https://doi.org/10.1103/c2dh-tj4v" },
+        { id: "casimir", name: "Spinning Black Hole Scattering at O(G^3 S^2): Casimir Terms, Radial Action, and Hidden Symmetry", group: "journal", url: "https://doi.org/10.1007/JHEP03(2025)126" }
+      ];
+
+      const links = [
+        ["dogan", "thermo"], ["aoki", "thermo"], ["cristofoli", "thermo"], ["jeong", "thermo"], ["yoshimura", "thermo"],
+        ["dogan", "gravitons"],
+        ["dogan", "symmetries"], ["brown", "symmetries"], ["gonzo", "symmetries"], ["zeng", "symmetries"],
+        ["dogan", "self-force"], ["delduca", "self-force"], ["gonzo", "self-force"],
+        ["dogan", "quartic"], ["cordero", "quartic"], ["kraus", "quartic"], ["smirnov", "quartic"], ["zeng", "quartic"],
+        ["dogan", "casimir"], ["cordero", "casimir"], ["kraus", "casimir"], ["ruf", "casimir"], ["zeng", "casimir"]
+      ].map(([source, target]) => ({ source, target, value: 1 }));
+
+      const colors = {
+        self: "#000000",
+        coauthor: "#d6d2d2",
+        preprint: "#79addc",
+        journal: "#9e1910"
+      };
+
+      const svg = d3.select("#publication-network");
+      const width = 700;
+      const height = 260;
+      const linked = new Set(links.flatMap((d) => [`${d.source},${d.target}`, `${d.target},${d.source}`]));
+
+      const link = svg.append("g")
+        .selectAll("line")
+        .data(links)
+        .join("line")
+        .attr("class", "link");
+
+      const node = svg.append("g")
+        .selectAll("g")
+        .data(nodes)
+        .join("g")
+        .attr("class", "node")
+        .attr("tabindex", "0")
+        .attr("role", "link")
+        .attr("aria-label", (d) => d.name)
+        .on("mouseover focus", focusNode)
+        .on("mouseout blur", clearFocus)
+        .on("click", openNode)
+        .on("keydown", (event, d) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openNode(event, d);
+          }
+        })
+        .call(d3.drag()
+          .on("start", dragstarted)
+          .on("drag", dragged)
+          .on("end", dragended));
+
+      node.append("circle")
+        .attr("r", radius)
+        .attr("fill", (d) => colors[d.group]);
+
+      node.append("text")
+        .attr("dx", 12)
+        .attr("dy", ".35em")
+        .text((d) => d.name);
+
+      node.append("title")
+        .text((d) => d.name);
+
+      const simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id((d) => d.id).distance(32))
+        .force("charge", d3.forceManyBody().strength(-95))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius((d) => radius(d) + 5))
+        .on("tick", ticked);
+
+      function radius(d) {
+        return d.group === "self" ? 9 : 8;
+      }
+
+      function isNeighbor(a, b) {
+        return a.id === b.id || linked.has(`${a.id},${b.id}`);
+      }
+
+      function focusNode(event, d) {
+        link.transition().duration(200)
+          .style("opacity", (l) => l.source.id === d.id || l.target.id === d.id ? 1 : 0.25);
+
+        node.transition().duration(200)
+          .style("opacity", (o) => isNeighbor(d, o) ? 1 : 0.25);
+
+        d3.select(this).select("circle").transition().duration(350)
+          .attr("r", radius(d) + 5);
+
+        d3.select(this).select("text").transition().duration(350)
+          .attr("x", 13)
+          .style("font-size", "30px")
+          .style("opacity", 1);
+      }
+
+      function clearFocus(event, d) {
+        link.transition().duration(250).style("opacity", 1);
+        node.transition().duration(250).style("opacity", 1);
+
+        d3.select(this).select("circle").transition().duration(350)
+          .attr("r", radius(d));
+
+        d3.select(this).select("text").transition().duration(600)
+          .attr("x", 0)
+          .style("font-size", "12px")
+          .style("opacity", 0);
+      }
+
+      function openNode(event, d) {
+        window.open(d.url, "_blank", "noopener,noreferrer");
+      }
+
+      function ticked() {
+        nodes.forEach((d) => {
+          d.x = Math.max(radius(d), Math.min(width - radius(d), d.x));
+          d.y = Math.max(radius(d), Math.min(height - radius(d), d.y));
+        });
+
+        link
+          .attr("x1", (d) => d.source.x)
+          .attr("y1", (d) => d.source.y)
+          .attr("x2", (d) => d.target.x)
+          .attr("y2", (d) => d.target.y);
+
+        node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+      }
+
+      function dragstarted(event) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+      }
+
+      function dragged(event) {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+      }
+
+      function dragended(event) {
+        if (!event.active) simulation.alphaTarget(0);
+        event.subject.fx = null;
+        event.subject.fy = null;
+      }
+    </script>
+  </body>
+</html>

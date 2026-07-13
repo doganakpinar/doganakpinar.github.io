@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Talks, Seminars, and Presentations Map</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+    <style>
+      :root {
+        --paper: #fbfaf6;
+        --ink: #1a1a18;
+        --muted: #64615a;
+        --line: #d9d4c8;
+        --accent: #315f4c;
+        --accent-warm: #a5462a;
+        --accent-cool: #4c5f8c;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: transparent;
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .talk-map-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .map-panel {
+        position: relative;
+        min-height: 300px;
+        background: transparent;
+        overflow: hidden;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .sphere {
+        fill: #f4f0e8;
+      }
+
+      .country {
+        fill: #dfd9cc;
+        stroke: #fbfaf6;
+        stroke-width: 0.5;
+      }
+
+      .marker {
+        cursor: pointer;
+        stroke: #fbfaf6;
+        stroke-width: 1.4;
+      }
+
+      .marker:hover,
+      .marker.is-active {
+        stroke: var(--ink);
+        stroke-width: 1.9;
+      }
+
+      .marker-dot {
+        fill: #fffdf8;
+        pointer-events: none;
+        stroke: none;
+      }
+
+      .marker-callout {
+        pointer-events: none;
+        stroke: var(--muted);
+        stroke-width: 1;
+        stroke-dasharray: 2 2;
+      }
+
+      .marker-label {
+        pointer-events: none;
+        fill: var(--ink);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        padding: 10px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        border: 1px solid #fbfaf6;
+      }
+
+      .zoom-controls {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        gap: 6px;
+      }
+
+      .zoom-controls button {
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--line);
+        background: #fffdf8;
+        color: var(--ink);
+        cursor: pointer;
+        font: 700 14px/1 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .zoom-controls button:hover {
+        color: var(--accent-warm);
+        border-color: var(--accent-warm);
+      }
+
+      .detail {
+        min-height: 300px;
+        padding: 2px 0 0;
+        background: transparent;
+      }
+
+      .detail h3 {
+        margin: 0 0 6px;
+        color: var(--accent-warm);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 24px;
+        font-weight: 500;
+      }
+
+      .detail p {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .detail ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--ink);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .detail li + li {
+        margin-top: 8px;
+      }
+
+      .detail time {
+        display: block;
+        color: var(--accent-warm);
+        font-weight: 700;
+      }
+
+      .detail li span {
+        display: block;
+      }
+
+      @media (max-width: 720px) {
+        .talk-map-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .map-panel,
+        .detail {
+          min-height: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="talk-map-shell">
+      <div>
+        <div class="map-panel">
+          <div class="zoom-controls" aria-label="Map Zoom Controls">
+            <button type="button" id="zoom-in" aria-label="Zoom In">+</button>
+            <button type="button" id="zoom-out" aria-label="Zoom Out">−</button>
+            <button type="button" id="zoom-reset" aria-label="Reset Zoom">↺</button>
+          </div>
+          <svg id="talk-map" viewBox="0 0 900 380" role="img" aria-label="World Map of Talk Locations"></svg>
+        </div>
+        <div class="legend" aria-label="Talk Type Legend">
+          <span><i class="swatch" style="background:#a5462a"></i> Conferences and Workshops</span>
+          <span><i class="swatch" style="background:#4c5f8c"></i> Seminars and Local Meetings</span>
+        </div>
+      </div>
+      <aside id="talk-map-detail" class="detail" aria-live="polite">
+        <h3>Talk Locations</h3>
+        <p>Click a marker to see the talks associated with that city or venue.</p>
+      </aside>
+    </div>
+
+    <script>
+      const locations = [
+        {
+          city: "Stockholm",
+          country: "Sweden",
+          venue: "Nordita",
+          lon: 18.0686,
+          lat: 59.3293,
+          type: "conference",
+          talks: [
+            ["2026-04-17", "Kerr Black Hole Scattering: An On-Shell Approach to Conserved Quantities and Integrability"]
+          ]
+        },
+        {
+          city: "Berlin",
+          country: "Germany",
+          venue: "Humboldt University of Berlin",
+          lon: 13.4050,
+          lat: 52.5200,
+          type: "seminar",
+          talks: [
+            ["2026-02-13", "Precision Kerr Black Hole Dynamics from Scattering Amplitudes"],
+            ["2026-02-11", "An On-Shell Approach to Symmetries and Integrability for Kerr Black Hole Scattering"]
+          ]
+        },
+        {
+          city: "Kyoto",
+          country: "Japan",
+          venue: "Yukawa Institute for Theoretical Physics",
+          lon: 135.7681,
+          lat: 35.0116,
+          type: "conference",
+          talks: [
+            ["2026-01-20", "An On-Shell Approach to Symmetries and Integrability for Kerr Black Hole Scattering"],
+            ["2025-06-05", "Effective Field Theory for Spinning Extreme Mass Ratios"]
+          ]
+        },
+        {
+          city: "Wako",
+          country: "Japan",
+          venue: "RIKEN iTHEMS",
+          lon: 139.6125,
+          lat: 35.7880,
+          dx: 18,
+          dy: -14,
+          label: "RIKEN iTHEMS",
+          type: "seminar",
+          talks: [
+            ["2026-01-15", "Classical Spinning Black Hole Scattering from Quantum Amplitudes"]
+          ]
+        },
+        {
+          city: "Tallahassee",
+          country: "United States",
+          venue: "Florida State University",
+          lon: -84.2807,
+          lat: 30.4383,
+          type: "seminar",
+          talks: [
+            ["2025-12-03", "Precision Frontiers in Spinning Black Hole Scattering"]
+          ]
+        },
+        {
+          city: "Los Angeles",
+          country: "United States",
+          venue: "University of California, Los Angeles",
+          lon: -118.2437,
+          lat: 34.0522,
+          type: "seminar",
+          talks: [
+            ["2025-12-03", "Unexpected Symmetries of Kerr Black Hole Scattering"]
+          ]
+        },
+        {
+          city: "Tokyo",
+          country: "Japan",
+          venue: "University of Tokyo",
+          lon: 139.6917,
+          lat: 35.6895,
+          type: "seminar",
+          talks: [
+            ["2025-07-15", "Spinning Black Hole Scattering and Asymptotic Integrability"]
+          ]
+        },
+        {
+          city: "Padova",
+          country: "Italy",
+          venue: "Amplitudes Lounge Seminar",
+          lon: 11.8768,
+          lat: 45.4064,
+          type: "seminar",
+          talks: [
+            ["2025-04-28", "Quartic-in-Spin Black Hole Scattering at 3PM"]
+          ]
+        },
+        {
+          city: "London",
+          country: "United Kingdom",
+          venue: "Queen Mary University of London",
+          lon: -0.1276,
+          lat: 51.5072,
+          type: "seminar",
+          talks: [
+            ["2025-04-15", "Quartic-in-Spin Black Hole Scattering at 3PM"]
+          ]
+        },
+        {
+          city: "Edinburgh",
+          country: "United Kingdom",
+          venue: "University of Edinburgh",
+          lon: -3.1883,
+          lat: 55.9533,
+          type: "seminar",
+          talks: [
+            ["2024-09-26", "Spinning Black Hole Scattering at O(G^3) Using Fixed Spin Theories"]
+          ]
+        }
+      ];
+
+      const colors = {
+        conference: "#a5462a",
+        seminar: "#4c5f8c"
+      };
+
+      const svg = d3.select("#talk-map");
+      const detail = document.getElementById("talk-map-detail");
+      const width = 900;
+      const height = 380;
+      const projection = d3.geoNaturalEarth1().fitExtent([[18, 10], [882, 350]], { type: "Sphere" });
+      const path = d3.geoPath(projection);
+      const mapGroup = svg.append("g");
+      const zoom = d3.zoom()
+        .scaleExtent([1, 7])
+        .translateExtent([[0, 0], [width, height]])
+        .on("zoom", (event) => {
+          mapGroup.attr("transform", event.transform);
+        });
+
+      svg.call(zoom);
+      document.getElementById("zoom-in").addEventListener("click", () => {
+        svg.transition().duration(180).call(zoom.scaleBy, 1.45);
+      });
+      document.getElementById("zoom-out").addEventListener("click", () => {
+        svg.transition().duration(180).call(zoom.scaleBy, 1 / 1.45);
+      });
+      document.getElementById("zoom-reset").addEventListener("click", () => {
+        svg.transition().duration(180).call(zoom.transform, d3.zoomIdentity);
+      });
+
+      function formatDate(value) {
+        const date = new Date(value + "T00:00:00");
+        return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+      }
+
+      function showDetail(location) {
+        detail.innerHTML = `
+          <h3>${location.city}, ${location.country}</h3>
+          <p>${location.venue}</p>
+          <ul>
+            ${location.talks.map(([date, title]) => `<li><time>${formatDate(date)}</time><span>${title}</span></li>`).join("")}
+          </ul>
+        `;
+      }
+
+      d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then((world) => {
+        const countries = topojson.feature(world, world.objects.countries).features;
+
+        mapGroup.append("path")
+          .attr("class", "sphere")
+          .attr("d", path({ type: "Sphere" }));
+
+        mapGroup.append("g")
+          .selectAll("path")
+          .data(countries)
+          .join("path")
+          .attr("class", "country")
+          .attr("d", path);
+
+        const marker = mapGroup.append("g")
+          .selectAll("g")
+          .data(locations)
+          .join("g")
+          .attr("transform", (d) => {
+            const [x, y] = projection([d.lon, d.lat]);
+            return `translate(${x + (d.dx || 0)},${y + (d.dy || 0)})`;
+          })
+          .on("click", function(event, d) {
+            svg.selectAll(".marker").classed("is-active", false);
+            d3.select(this).select(".marker").classed("is-active", true);
+            showDetail(d);
+          });
+
+        marker.append("path")
+          .attr("class", "marker")
+          .attr("d", "M0 0 C-7 -8 -11 -14 -11 -20 C-11 -27 -6 -32 0 -32 C6 -32 11 -27 11 -20 C11 -14 7 -8 0 0 Z")
+          .attr("transform", (d) => `scale(${1 + Math.min(d.talks.length - 1, 2) * 0.12})`)
+          .attr("fill", (d) => colors[d.type]);
+
+        marker.append("circle")
+          .attr("class", "marker-dot")
+          .attr("cy", -20)
+          .attr("r", 3.4);
+
+        marker.filter((d) => d.dx || d.dy)
+          .append("line")
+          .attr("class", "marker-callout")
+          .attr("x1", (d) => -(d.dx || 0))
+          .attr("y1", (d) => -(d.dy || 0))
+          .attr("x2", 0)
+          .attr("y2", 0);
+
+        marker.filter((d) => d.label)
+          .append("text")
+          .attr("class", "marker-label")
+          .attr("x", 14)
+          .attr("y", -28)
+          .text((d) => d.label);
+
+        marker.append("title")
+          .text((d) => `${d.city}, ${d.country}: ${d.talks.length} talk${d.talks.length === 1 ? "" : "s"}`);
+
+      }).catch(() => {
+        detail.innerHTML = "<h3>Map Unavailable</h3><p>The map needs the public world atlas script to load. The talk list below is still available.</p>";
+      });
+    </script>
+  </body>
+</html>
