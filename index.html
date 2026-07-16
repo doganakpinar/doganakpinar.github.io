@@ -65,8 +65,8 @@
           <p>
             I am particularly interested in how spin and finite-size effects
             modify black-hole scattering and compact-binary dynamics across
-            different mass-ratio regimes, as well as the hidden symmetries and
-            integrable structures of Kerr black holes. In addition, I am also
+            different mass-ratio regimes, as well as in the hidden symmetries
+            and integrable structures of Kerr black holes. In addition, I am
             interested in how scattering amplitudes can describe gravitational
             phenomena, including Hawking radiation.
           </p>
@@ -214,6 +214,11 @@
           <h2>Talks, Seminars, and Presentations</h2>
         </div>
 
+        <p class="section-intro">
+          I have had the privilege to visit many amazing countries around the
+          world to present my work. Below is a summary of the talks, seminars,
+          and presentations I have given.
+        </p>
         <p class="talk-map-note">
           The markers show places where I have presented work in conferences,
           workshops, seminars, and local meetings. Click on a marker for the
@@ -226,12 +231,17 @@
         ></iframe>
 
         <div class="talk-list">
-          <article class="talk">
-            <div>
+          <article class="talk talk-with-material">
+            <div class="talk-copy">
               <h3>Kerr Black Hole Scattering: An On-Shell Approach to Conserved Quantities and Integrability</h3>
               <p class="talk-date"><time datetime="2026-04-17">April 17, 2026</time></p>
               <p class="talk-meta">Conference, Amplitudes, Strong-Field Gravity, and Resummation, Nordita</p>
             </div>
+            <aside class="talk-material" aria-label="Nordita poster">
+              <a class="talk-thumbnail talk-thumbnail-nordita" href="./files/nordita-poster-final.pdf" target="_blank" rel="noopener noreferrer" type="application/pdf" aria-label="Open Nordita poster in a new tab">
+                <img src="assets/nordita-poster-final.png" alt="Preview of the Nordita poster">
+              </a>
+            </aside>
           </article>
           <article class="talk">
             <div>
@@ -261,12 +271,17 @@
               <p class="talk-meta">RIKEN iTHEMS Seminar, RIKEN Center for Interdisciplinary Theoretical and Mathematical Sciences, Wako, Saitama</p>
             </div>
           </article>
-          <article class="talk">
-            <div>
+          <article class="talk talk-with-material">
+            <div class="talk-copy">
               <h3>Precision Frontiers in Spinning Black Hole Scattering</h3>
               <p class="talk-date"><time datetime="2025-12-03">December 03, 2025</time></p>
               <p class="talk-meta">Seminar, Florida State University, Tallahassee</p>
             </div>
+            <aside class="talk-material" aria-label="Florida State University seminar poster">
+              <a class="talk-thumbnail talk-thumbnail-fsu" href="./files/fsu-hep-seminar-2025.pdf" target="_blank" rel="noopener noreferrer" type="application/pdf" aria-label="Open Florida State University seminar poster in a new tab">
+                <img src="assets/fsu-hep-seminar-2025.png" alt="Preview of the Florida State University seminar poster">
+              </a>
+            </aside>
           </article>
           <article class="talk">
             <div>
@@ -451,5 +466,15 @@
         <a class="icon-link" href="https://orcid.org/0009-0000-4466-1538"><i class="ai ai-orcid-square ai-fw" aria-hidden="true"></i><span>ORCID</span></a>
       </div>
     </footer>
+    <script>
+      document.querySelectorAll('a[href]').forEach((link) => {
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('mailto:') || link.hasAttribute('download') || link.classList.contains('talk-thumbnail')) {
+          return;
+        }
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+      });
+    </script>
   </body>
 </html>
