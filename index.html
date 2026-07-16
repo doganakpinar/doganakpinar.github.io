@@ -238,7 +238,7 @@
               <p class="talk-meta">Conference, Amplitudes, Strong-Field Gravity, and Resummation, Nordita</p>
             </div>
             <aside class="talk-material" aria-label="Nordita poster">
-              <a class="talk-thumbnail talk-thumbnail-nordita" href="./files/nordita-poster-final.pdf" target="_blank" rel="noopener noreferrer" type="application/pdf" aria-label="Open Nordita poster in a new tab">
+              <a class="talk-thumbnail talk-thumbnail-nordita" href="./files/nordita-poster-final.pdf" download type="application/pdf" aria-label="Download Nordita poster">
                 <img src="assets/nordita-poster-final.png" alt="Preview of the Nordita poster">
               </a>
             </aside>
@@ -278,7 +278,7 @@
               <p class="talk-meta">Seminar, Florida State University, Tallahassee</p>
             </div>
             <aside class="talk-material" aria-label="Florida State University seminar poster">
-              <a class="talk-thumbnail talk-thumbnail-fsu" href="./files/fsu-hep-seminar-2025.pdf" target="_blank" rel="noopener noreferrer" type="application/pdf" aria-label="Open Florida State University seminar poster in a new tab">
+              <a class="talk-thumbnail talk-thumbnail-fsu" href="./files/fsu-hep-seminar-2025.pdf" download type="application/pdf" aria-label="Download Florida State University seminar poster">
                 <img src="assets/fsu-hep-seminar-2025.png" alt="Preview of the Florida State University seminar poster">
               </a>
             </aside>
@@ -345,7 +345,7 @@
       <section id="cv" class="section">
         <div class="section-heading">
           <h2>Curriculum</h2>
-          <a class="subtle-link icon-link" href="files/dogan-akpinar-cv.pdf"><i class="fas fa-file-pdf fa-fw" aria-hidden="true"></i><span>Download CV</span></a>
+          <a class="subtle-link icon-link" href="files/dogan-akpinar-cv.pdf" download><i class="fas fa-file-pdf fa-fw" aria-hidden="true"></i><span>Download CV</span></a>
         </div>
 
         <div class="cv-block">
@@ -469,7 +469,15 @@
     <script>
       document.querySelectorAll('a[href]').forEach((link) => {
         const href = link.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('mailto:') || link.hasAttribute('download') || link.classList.contains('talk-thumbnail')) {
+        if (
+          !href ||
+          href.startsWith('#') ||
+          href.startsWith('mailto:') ||
+          link.hasAttribute('download') ||
+          href.startsWith('files/') ||
+          href.startsWith('./files/') ||
+          href.endsWith('.pdf')
+        ) {
           return;
         }
         link.setAttribute('target', '_blank');
